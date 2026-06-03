@@ -1,0 +1,291 @@
+
+
+
+
+
+
+lammps forcefield angle
+
+  6                      fourier      121.777217        0.343737        0.374972        0.281246 # C_R C_3 H_
+
+(energy c1 c2 c3)
+
+
+
+
+
+to amber angle cos^2 like angle potential k (phi - phi_0)^2
+
+To convert your LAMMPS fourier angle parameters to a standard harmonic (Amber-style) angle potential, you have to align their mathematical forms using a Taylor expansion around the equilibrium angle.
+
+Here is the exact step-by-step conversion process.
+
+1. The Two Potentials
+LAMMPS angle_style fourier
+The functional form for the Fourier style in LAMMPS is:
+
+E 
+fourier
+​
+ =K[C 
+0
+​
+ +C 
+1
+​
+ cos(θ)+C 
+2
+​
+ cos(2θ)]
+From your input line:
+6 fourier 121.777217 0.343737 0.374972 0.281246
+
+K=121.777217
+
+C 
+0
+​
+ =0.343737
+
+C 
+1
+​
+ =0.374972
+
+C 
+2
+​
+ =0.281246
+
+Amber / LAMMPS angle_style harmonic
+The Amber-style harmonic potential (k(θ−θ 
+0
+​
+ ) 
+2
+ ) is expressed as:
+
+E 
+harmonic
+​
+ =K 
+amber
+​
+ (θ−θ 
+0
+​
+ ) 
+2
+ 
+2. Deriving the Conversion Equations
+By evaluating the minimum of the Fourier potential energy curve (dE/dθ=0) and its curvature (the second derivative d 
+2
+ E/dθ 
+2
+ ), we get the matching harmonic terms:
+
+Finding θ 
+0
+​
+  (Equilibrium Angle)
+Setting the first derivative to zero yields:
+
+θ 
+0
+​
+ =arccos( 
+4C 
+2
+​
+ 
+−C 
+1
+​
+ 
+​
+ )
+Finding K 
+amber
+​
+  (Force Constant)
+Taking the second derivative at θ 
+0
+​
+  and matching it to the harmonic form (2K 
+amber
+​
+ ) gives:
+
+K 
+amber
+​
+ = 
+2
+K
+​
+ [−C 
+1
+​
+ cos(θ 
+0
+​
+ )−4C 
+2
+​
+ cos(2θ 
+0
+​
+ )]
+Warning on Units: In Amber/Harmonic styles, angles are measured in radians for the equation's math, but LAMMPS inputs for angle_style harmonic expect θ 
+0
+​
+  in degrees. The calculated K 
+amber
+​
+  will end up with units of energy/rad 
+2
+ , which is exactly what standard harmonic styles require.
+
+3. Calculation for Your Values
+Using your specific parameters (K=121.777217, C 
+1
+​
+ =0.374972, C 
+2
+​
+ =0.281246):
+
+Step A: Calculate θ 
+0
+​
+ 
+4C 
+2
+​
+ 
+−C 
+1
+​
+ 
+​
+ = 
+4×0.281246
+−0.374972
+​
+ = 
+1.124984
+−0.374972
+​
+ ≈−0.333313
+θ 
+0
+​
+ =arccos(−0.333313)≈1.91061 radians
+Convert θ 
+0
+​
+  to degrees for your final LAMMPS input:
+
+θ 
+0
+​
+ =1.91061×( 
+π
+180
+​
+ )≈109.47 
+∘
+ 
+(Note: This is the characteristic tetrahedral angle, perfectly matching your atom types C_R C_3 H_)
+
+Step B: Calculate K 
+amber
+​
+ 
+Using θ 
+0
+​
+ =109.47 
+∘
+  (1.91061 rad), we also get 2θ 
+0
+​
+ =218.94 
+∘
+ :
+
+cos(θ 
+0
+​
+ )≈−0.33331
+
+cos(2θ 
+0
+​
+ )≈−0.77779
+
+Plug these back into the force constant equation:
+
+K 
+amber
+​
+ = 
+2
+121.777217
+​
+ [−(0.374972)(−0.33331)−4(0.281246)(−0.77779)]
+K 
+amber
+​
+ =60.8886[0.12498+0.87499]
+K 
+amber
+​
+ =60.8886×0.99997≈60.887
+4. Final Output Conversion
+If you are replacing this in your LAMMPS input script or data file using angle_style harmonic, your coefficients change:
+
+Old Fourier format:
+
+Code-Snippet
+angle_style fourier
+angle_coeff 6 121.777217 0.343737 0.374972 0.281246
+New Amber/Harmonic format:
+
+Code-Snippet
+angle_style harmonic
+angle_coeff 6 60.887 109.47
+(Format: angle_coeff [type] [K] [theta_0 in degrees])
+
+
+
+
+
+
+Converting non-bonded parameters from LAMMPS to AMBER format requires careful attention because the two engines use different functional forms, units, and formatting styles for Lennard-Jones (LJ) interactions.Here is a guide on how to convert these parameters and map them correctly.1. Understand the Functional Forms & UnitsThe biggest hurdle in this conversion is that LAMMPS typically uses the A/B coefficient form or standard distance/energy variables, while AMBER relies on $\sigma$ (or $R_{min}/2$) and $\epsilon$.LAMMPS (pair_style lj/cut)LAMMPS usually defines the LJ potential using $\epsilon$ (energy well depth) and $\sigma$ (collision diameter):$$V(r) = 4\epsilon \left[ \left(\frac{\sigma}{r}\right)^{12} - \left(\frac{\sigma}{r}\right)^6 \right]$$Units (real): $\epsilon$ is in kcal/mol, $\sigma$ is in Angstroms.LAMMPS Alternative (pair_style lj/class2): Uses the 9-6 potential instead of 12-6. Note: AMBER natively uses 12-6, so 9-6 parameters cannot be directly converted without refitting.AMBER (frcmod or prmtop)AMBER expresses the 12-6 potential using $A$ and $B$ coefficients internally, but in the parameter files (frcmod), it uses $R_{min}/2$ (the radius at the potential minimum) and $\epsilon$:$$V(r) = \epsilon \left[ \left(\frac{R_{min}}{r}\right)^{12} - 2\left(\frac{R_{min}}{r}\right)^6 \right]$$Units: $\epsilon$ is in kcal/mol, $R_{min}/2$ is in Angstroms.2. The Conversion EquationsSince $\epsilon$ is identical in both formats (assuming LAMMPS real units), you only need to convert LAMMPS $\sigma$ to AMBER $R_{min}/2$.The relationship between the distance at the zero-energy point ($\sigma$) and the distance at the minimum-energy point ($R_{min}$) is:$$R_{min} = \sigma \cdot 2^{1/6} \approx \sigma \cdot 1.12246$$Because AMBER expects the half-distance ($R_{min}/2$) for individual atom types, the final conversion formula is:$$\frac{R_{min}}{2} = \frac{\sigma \cdot 2^{1/6}}{2} = \sigma \cdot 2^{-5/6} \approx \sigma \cdot 0.56123$$⚠️ Crucial Warning on Combining RulesAMBER strictly uses Lorentz-Berthelot combining rules:$$\sigma_{ij} = \frac{\sigma_i + \sigma_j}{2} \quad \text{and} \quad \epsilon_{ij} = \sqrt{\epsilon_i \cdot \epsilon_j}$$LAMMPS can use geometric, arithmetic, or explicitly defined pair coefficients (pair_coeff).If your LAMMPS simulation used pair_modify mix geometric, a direct conversion to AMBER will introduce errors because AMBER cannot natively mix Lennard-Jones parameters geometrically without manual off-diagonal overrides (e.g., using NONB modifications in modern AMBER).3. Formatting for AMBER (frcmod)To introduce these converted parameters into AMBER, you will typically write an frcmod (force field modification) file.The non-bonded section in an frcmod file comes under the NONBON header. Here is the exact format required:PlaintextRemark line: put whatever you want here
+MASS
+
+BOND
+
+ANGLE
+
+DIHE
+
+IMPROPER
+
+NONBON
+  Atom_Type   R_min/2     epsilon
+  Format:     (F10.4,     F10.4)
+Example ConversionSuppose you have a LAMMPS carbon atom type with the following parameters:$\epsilon = 0.1094 \text{ kcal/mol}$$\sigma = 3.3997 \text{ Å}$Calculate AMBER $R_{min}/2$: $3.3997 \times 0.561231 = 1.9080 \text{ Å}$Keep $\epsilon$ the same: $0.1094 \text{ kcal/mol}$Your frcmod entry would look like this (ensure proper 10-character column spacing):PlaintextConverted LJ parameters from LAMMPS
+MASS
+
+BOND
+
+ANGLE
+
+DIHE
+
+IMPROPER
+
+NONBON
+  CA        1.9080    0.1094

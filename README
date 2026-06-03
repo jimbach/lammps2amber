@@ -1,0 +1,44 @@
+This is a lammps to amber converter
+
+beware that you always need to check the forcefield, if you want to edit it afterwards adjust the .frcmod and .lib file to your needs.
+
+Prerequisites:
+openbabel
+ambertools
+
+You need to export the home and the path like this:
+
+export PATH=/path/to/your/uff2amberfolder:$PATH
+export LAMMPS2AMBERHOME=/path/to/your/uff2amberfolder
+
+for example if it is in ~/software/lammps2amber
+
+export PATH=~/software/lammps2amber:$PATH
+export LAMMPS2AMBERHOME=~/software/lammps2amber
+
+
+then all should be set up to run the example in examples ZIF-8
+
+just type:
+
+uff4mof_to_amber.sh ZIF-8
+
+and it should generate all the files from the ZIF-8.data and ZIF-8.cif
+
+
+If you need more types than adjust the mapping
+in fill_frcmod.py the mapping is defined:
+
+ATOM_MAP = {
+    "C_R": "CR",
+    "C_3": "C3",
+    "H_": "H",
+    "N_R": "NR",
+    "Zn3f2": "Zn",
+}
+
+adjust this as needed for you molecule. beware that amber types are only allowed to be 2 characters long.
+
+also mind that the system should not exceed 1200 atoms per type, as amber needs unique atom names
+
+if you have any problems or need more type mapping, feel free to contact me
