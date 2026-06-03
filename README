@@ -42,3 +42,6 @@ adjust this as needed for you molecule. beware that amber types are only allowed
 also mind that the system should not exceed 1200 atoms per type, as amber needs unique atom names
 
 if you have any problems or need more type mapping, feel free to contact me
+
+Cite as: 
+J. Bachmann. (2026). lammps2amber: https://github.com/jimbach/lammps2amber, Accessed on: xx.xx.xxxx
