@@ -16,31 +16,27 @@ antechamber -i $1.pdb -fi pdb -o $1.mol2 -fo mol2 -j 5 -at sybyl -dr no
 #replace the molname
 sed -i "s/UNL/$shortname/g" $1.mol2
 
-./rename_mol2.py $1.data $1.mol2 renamed.mol2
+${LAMMPS2AMBERHOME}/tools/rename_mol2.py $1.data $1.mol2 renamed.mol2
 mv renamed.mol2 $1.mol2
 
 
-./copy_bonds_to_mol2.py $1.mol2 $1.data out.mol2
+${LAMMPS2AMBERHOME}/tools/copy_bonds_to_mol2.py $1.mol2 $1.data out.mol2
 mv out.mol2 $1.mol2
 
 
-./make_bigger_unitcell.py $1.mol2 $1.data out.mol2
+${LAMMPS2AMBERHOME}/tools/make_bigger_unitcell.py $1.mol2 $1.data out.mol2
 mv out.mol2 $1.mol2
 
-./uniquely_label_atoms_mol2.py $1.mol2 out.mol2
+${LAMMPS2AMBERHOME}/tools/uniquely_label_atoms_mol2.py $1.mol2 out.mol2
 mv out.mol2 $1.mol2
 
 
-
-#parmchk -i $1.mol2 -f mol2 -o $1.frcmod -s uff -a Y
-
-./gen_frcmod_template.py $1.mol2 $shortname.frcmod
+${LAMMPS2AMBERHOME}/tools/gen_frcmod_template.py $1.mol2 $shortname.frcmod
 
 
-./fill_frcmod2.py $1.data $shortname.frcmod filled.frcmod 
+${LAMMPS2AMBERHOME}/tools/fill_frcmod2.py $1.data $shortname.frcmod filled.frcmod 
 mv filled.frcmod $shortname.frcmod
 
-#grep -v 0.0000 $shortname.frcmod > removed.frcmod
 mv removed.frcmod $shortname.frcmod
 
 #boxx=$(grep "_cell_length_a" $1.cif | awk '{print $2}')
@@ -54,7 +50,7 @@ boxz=$(grep "zlo zhi" $1.data | awk '{print $2}')
 
 filename="$1"
 
-grep -v 0.0000 ZIF.frcmod > nozero.frcmod
+grep -v 0.0000 $shortname.frcmod > nozero.frcmod
 
 echo "building a tleap file"
 echo "#################################################"
@@ -72,7 +68,8 @@ echo "#################################################"
 echo "running tleap"
 tleap -f $filename.tleap.in | awk '!seen[$0]++' | grep " No " > MISSING-PARAMTERS.dat
 
-rm nozero.frcmod
+${LAMMPS2AMBERHOME}/tools/add_missing_params.py MISSING-PARAMTERS.dat nozero.frcmod
+mv nozero.frcmod $shortname.frcmod
 
 echo "building a tleap file"
 echo "#################################################"
