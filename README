@@ -25,6 +25,8 @@ uff4mof_to_amber.sh ZIF-8
 
 and it should generate all the files from the ZIF-8.data and ZIF-8.cif
 
+furthermore a file MISSING_PARAMETERS.dat is printed containing a list of what was missing and was set to 0.000
+check these especially carefully and set them if needed in the .frcmod
 
 If you need more types than adjust the mapping
 in fill_frcmod.py the mapping is defined:
